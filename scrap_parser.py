@@ -17,20 +17,93 @@ class MyWriter:
 
 
 def discography_from_musicapopular_cl(input_folder, output_folder):
-    writer = MyWriter(sys.stdout, os.path.join(output_folder, '_log_test.txt'))
-    sys.stdout = writer
+    # writer = MyWriter(sys.stdout, os.path.join(output_folder, '_log_test.txt'))
+    # sys.stdout = writer
     for dirpath, dirnames, filenames in os.walk(input_folder):
         for f in filenames:
+            print f
             if f.startswith(".") or f.endswith(".txt"):
                 continue
+            
+
             file_path = os.path.join(dirpath, f)
             f = open(file_path, 'rb')
             page = pickle.load(f)
 
-            disc = page.find('a', {'name':"discografia"})
+            people = page.find('span', {'class':"boxficha_integrantes"}).text.split('.')
+
+            for p in people:
+                # print p
+                if len(p) is not 0:
+                    # PERSON
+                    p = p.strip('Integrantes:')
+                    name = p.split(',')[0].split()
+                    f_name = [name[0]]
+                    l_name = name[1:]
+                    l_name = [' '.join(l_name)]
+
+                    # INSTRUMENTS
+                    instruments = []
+                    init = p.find(',')
+                    end = p.find('(')
+                    instrument_list = p[init + 1:end]
+                    instrument_list = instrument_list.replace(' y ', ',').split(',')
+                    for i in instrument_list:
+                        instruments.append(i.strip().capitalize())
+
+
+                    # YEARS
+                    init = [i for i, x in enumerate(p) if x == "("]
+                    end = [i for i, x in enumerate(p) if x == ")"]
+                    
+                    from_year = p[init[-1]]
+                    to_year = p[end[-1]]
+
+                    years = p[init[-1]+1:end[-1]]
+                    years = years.split('-')
+                    from_year = years[0].split()
+                    try:
+                        to_year = years[1].split()
+                    except:
+                        to_year = from_year
+                    # print from_year, to_year
+
+
+
+                    print f_name, l_name, instruments, from_year, to_year
+
+
+
+
+
+                # p = p.replace('-', '')
+                # mus_f_name = p[0]
+                # mus_l_name = p.split()[1].strip(',()')
+                # mus_instrument = p.split()[2].capitalize()
+                # mus_s_year = p.split()[3]
+                # mus_e_year = p.split()[4]
+                
+                # print mus_instrument
+                # print mus_s_year
+                # print mus_instrument
+
+
+
+            # disc = page.find('a', {'name':"discografia"})
+            bio = page.find('div', {'id':"colcentral_bio"})
+            bio_creator = bio.find(text=re.compile("&mdash;")).split("&mdash;")[-1].lstrip(' ')
+            
+            picture_creator = bio.find(text=re.compile("Foto:")).split("Foto:")[-1].lstrip(' ')
+
+
+
+            # print bio_creator, picture_creator
+            # except:
+            #     print 'No data'
+            
+
             
             
-            print disc.findAllNext()[0], disc.findAllNext()[1]
 
 
 if __name__ == "__main__":
