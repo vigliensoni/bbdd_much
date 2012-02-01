@@ -16,7 +16,10 @@ class MyWriter:
         self.logfile.close() 
 
 
-def discography_from_musicapopular_cl(input_folder, output_folder):
+def PEOPLE_ARTIST_from_musicapopular_cl(input_folder, output_folder):
+    '''Parses f_name, l_name, instruments played, and active years of all people
+    for an specific artist in musicapopular_cl
+    '''
     # writer = MyWriter(sys.stdout, os.path.join(output_folder, '_log_test.txt'))
     # sys.stdout = writer
     for dirpath, dirnames, filenames in os.walk(input_folder):
@@ -29,6 +32,7 @@ def discography_from_musicapopular_cl(input_folder, output_folder):
             file_path = os.path.join(dirpath, f)
             f = open(file_path, 'rb')
             page = pickle.load(f)
+
 
             people = page.find('span', {'class':"boxficha_integrantes"}).text.split('.')
 
@@ -56,52 +60,64 @@ def discography_from_musicapopular_cl(input_folder, output_folder):
                     init = [i for i, x in enumerate(p) if x == "("]
                     end = [i for i, x in enumerate(p) if x == ")"]
                     
-                    from_year = p[init[-1]]
-                    to_year = p[end[-1]]
+                    try:
+                        from_year = p[init[-1]]
+                        to_year = p[end[-1]]
 
-                    years = p[init[-1]+1:end[-1]]
-                    years = years.split('-')
-                    from_year = years[0].split()
+                        years = p[init[-1]+1:end[-1]]
+                        years = years.split('-')
+                        from_year = years[0].split()
+                    except:
+                        print 'error in years'
                     try:
                         to_year = years[1].split()
                     except:
                         to_year = from_year
-                    # print from_year, to_year
-
-
 
                     print f_name, l_name, instruments, from_year, to_year
 
 
 
-
-
-                # p = p.replace('-', '')
-                # mus_f_name = p[0]
-                # mus_l_name = p.split()[1].strip(',()')
-                # mus_instrument = p.split()[2].capitalize()
-                # mus_s_year = p.split()[3]
-                # mus_e_year = p.split()[4]
-                
-                # print mus_instrument
-                # print mus_s_year
-                # print mus_instrument
-
-
-
-            # disc = page.find('a', {'name':"discografia"})
             bio = page.find('div', {'id':"colcentral_bio"})
             bio_creator = bio.find(text=re.compile("&mdash;")).split("&mdash;")[-1].lstrip(' ')
             
             picture_creator = bio.find(text=re.compile("Foto:")).split("Foto:")[-1].lstrip(' ')
 
 
-
-            # print bio_creator, picture_creator
-            # except:
-            #     print 'No data'
+            
+def ARTIST_from_musicapopular_cl(input_folder, output_folder):
+    '''Parses artist_name, start_place, and begin_year for an specific artist in musicapopular_cl
+    '''    
+    # writer = MyWriter(sys.stdout, os.path.join(output_folder, '_log_test.txt'))
+    # sys.stdout = writer
+    for dirpath, dirnames, filenames in os.walk(input_folder):
+        for f in filenames:
+            print f
+            if f.startswith(".") or f.endswith(".txt"):
+                continue
             
 
+            file_path = os.path.join(dirpath, f)
+            f = open(file_path, 'rb')
+            page = pickle.load(f)
+
+
+            #ARTIST
+            artist = page.find('a', {'id':"up"}).text
+
+            #FORMACION
+            ficha = page.find('div', {'class':"boxficha"})
+            ficha_data = ficha.find('p')
+            begin_year = ficha_data.text.strip('Formaci&oacuten;:').split(',')[1].rstrip('.').strip()
+            start_place = ficha_data.text.split(':')[1].split(',')[0].strip()
+
+            #GENRE
+            genre = []
+            genres = ficha.findAll('p')[3].findChildren()
+            for g in genres:
+                genre.append(g.text)
+
+            print artist, genre, start_place, begin_year
             
             
 
@@ -114,7 +130,8 @@ if __name__ == "__main__":
     if not args:
         opts.error("You must supply arguments to this script.")  
 
-    discography_from_musicapopular_cl(args[0], args[1])
+    # PEOPLE_ARTIST_from_musicapopular_cl(args[0], args[1])
+    ARTIST_from_musicapopular_cl(args[0], args[1])
     # if args[1] == '1':
     #     print 'http://musicapopular.cl'
     #     musicapopular(args[0])
