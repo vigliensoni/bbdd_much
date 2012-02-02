@@ -24,15 +24,20 @@ def PEOPLE_ARTIST_from_musicapopular_cl(input_folder, output_folder):
     # sys.stdout = writer
     for dirpath, dirnames, filenames in os.walk(input_folder):
         for f in filenames:
-            print f
+             
             if f.startswith(".") or f.endswith(".txt"):
                 continue
             
 
             file_path = os.path.join(dirpath, f)
-            f = open(file_path, 'rb')
-            page = pickle.load(f)
+            g = open(file_path, 'rb')
+            page = pickle.load(g)
 
+            print 'http://www.musicapopular.cl/3.0/index2.php?op=Artista&id=&{0}'.format(f)
+
+            #ARTIST
+            artist = page.find('a', {'id':"up"}).text
+            # print artist
 
             people = page.find('span', {'class':"boxficha_integrantes"}).text.split('.')
 
@@ -41,6 +46,7 @@ def PEOPLE_ARTIST_from_musicapopular_cl(input_folder, output_folder):
                 if len(p) is not 0:
                     # PERSON
                     p = p.strip('Integrantes:')
+                    p = p.strip('Grupos:')
                     name = p.split(',')[0].split()
                     f_name = [name[0]]
                     l_name = name[1:]
@@ -67,14 +73,18 @@ def PEOPLE_ARTIST_from_musicapopular_cl(input_folder, output_folder):
                         years = p[init[-1]+1:end[-1]]
                         years = years.split('-')
                         from_year = years[0].split()
-                    except:
-                        print 'error in years'
-                    try:
                         to_year = years[1].split()
+                    # except:
+                    #     print 'error in years'
+                    # try:
+                        
+                    #     to_year = years[1].split()
                     except:
                         to_year = from_year
+                        print 'error in years'
 
-                    print f_name, l_name, instruments, from_year, to_year
+                    print artist, f_name, l_name, instruments, from_year, to_year
+            
 
 
 
@@ -83,6 +93,7 @@ def PEOPLE_ARTIST_from_musicapopular_cl(input_folder, output_folder):
             
             picture_creator = bio.find(text=re.compile("Foto:")).split("Foto:")[-1].lstrip(' ')
 
+            print '\n'
 
             
 def ARTIST_from_musicapopular_cl(input_folder, output_folder):
@@ -92,14 +103,14 @@ def ARTIST_from_musicapopular_cl(input_folder, output_folder):
     # sys.stdout = writer
     for dirpath, dirnames, filenames in os.walk(input_folder):
         for f in filenames:
-            print f
+            # print f
             if f.startswith(".") or f.endswith(".txt"):
                 continue
             
 
             file_path = os.path.join(dirpath, f)
-            f = open(file_path, 'rb')
-            page = pickle.load(f)
+            g = open(file_path, 'rb')
+            page = pickle.load(g)
 
 
             #ARTIST
@@ -120,7 +131,7 @@ def ARTIST_from_musicapopular_cl(input_folder, output_folder):
             print artist, genre, start_place, begin_year
             
             
-
+            print '\n'
 
 if __name__ == "__main__":
     usage = "%prog input_folder output_folder"# site_to_scrap?\n(1) musicapopular.cl\n(2) mus.cl\n(3)portaldisc.cl\n(4)vccl.tv"
@@ -130,8 +141,12 @@ if __name__ == "__main__":
     if not args:
         opts.error("You must supply arguments to this script.")  
 
-    # PEOPLE_ARTIST_from_musicapopular_cl(args[0], args[1])
-    ARTIST_from_musicapopular_cl(args[0], args[1])
+    PEOPLE_ARTIST_from_musicapopular_cl(args[0], args[1])
+    # ARTIST_from_musicapopular_cl(args[0], args[1])
+    
+
+
+
     # if args[1] == '1':
     #     print 'http://musicapopular.cl'
     #     musicapopular(args[0])
