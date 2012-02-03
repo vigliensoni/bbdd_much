@@ -35,41 +35,29 @@ def PEOPLE_ARTIST_from_musicapopular_cl(input_folder, output_folder):
             catenator.append(''.join(vector))
         return catenator
 
-    # def data_cleaner(array):
-    #     '''Cleans the '\n' in an array'''
-    #     for vector in array:
-    #         ''.join(vector)
-    #     print array
-
 
     for dirpath, dirnames, filenames in os.walk(input_folder):
-        for f in filenames:
+        for f in filenames:       
+            if f.startswith(".") or f.endswith(".txt"):
+                continue
+            file_path = os.path.join(dirpath, f)
+            g = open(file_path, 'rb')
+            page = pickle.load(g)
 
+            #ARTIST
+            artist = page.find('a', {'id':"up"}).text
 
-            try:           
-                if f.startswith(".") or f.endswith(".txt"):
-                    continue
-                file_path = os.path.join(dirpath, f)
-                g = open(file_path, 'rb')
-                page = pickle.load(g)
+            #PEOPLE
+            people = page.find('span', {'class':"boxficha_integrantes"})
 
-                # print 'http://www.musicapopular.cl/3.0/index2.php?op=Artista&id=&{0}'.format(f)
+            if people.findAll(text=True)[0].startswith('G'):   # For extracting groups for individuals
+                artist_type = 'Individual'
 
-                #ARTIST
-                artist = page.find('a', {'id':"up"}).text
-                # print artist
+            elif people.findAll(text=True)[0].startswith('I'): # For extracting individuals from Groups
+                artist_type = 'Group'       
 
-
-                people = page.find('span', {'class':"boxficha_integrantes"})
-                # print people
-                ary = []
-                if people.findAll(text=True)[0].startswith('G'):   # For extracting groups for individuals
-                    artist_type = 'Individual'
-
-                elif people.findAll(text=True)[0].startswith('I'): # For extracting individuals from Groups
-                    artist_type = 'Group'       
-
-                #Extracting the names of all people or bands
+            #Extracting the names of all people or bands
+            try:                 
                 people_data = []
                 for br in people.findAll('br')[0:-1]:
                     data = []
@@ -85,8 +73,6 @@ def PEOPLE_ARTIST_from_musicapopular_cl(input_folder, output_folder):
                             data.append(next.string)
                         next = next.nextSibling
                     people_data.append(data)
-
-                g.close()
             except:
                 print 'ERROR IN PAGE {0}'.format(f)
 
@@ -96,9 +82,10 @@ def PEOPLE_ARTIST_from_musicapopular_cl(input_folder, output_folder):
 
             print 'http://www.musicapopular.cl/3.0/index2.php?op=Artista&id=&{0}'.format(f)
             print artist_type, '\t', artist
-
+            for pd in people_data: print f, artist_type, artist, pd
             people_data = data_cleaner(people_data)
-            for pd in people_data: print pd
+            # print people_data
+            # for pd in people_data: print f, artist_type, artist, pd
 
             # for p in people:
             #     # print p
@@ -151,8 +138,9 @@ def PEOPLE_ARTIST_from_musicapopular_cl(input_folder, output_folder):
             # bio_creator = bio.find(text=re.compile("&mdash;")).split("&mdash;")[-1].lstrip(' ')
             
             # picture_creator = bio.find(text=re.compile("Foto:")).split("Foto:")[-1].lstrip(' ')
-
+            g.close()
             print '\n'
+
 
             
 def ARTIST_from_musicapopular_cl(input_folder, output_folder):
