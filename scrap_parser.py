@@ -1,4 +1,5 @@
 import urllib2, re, os, pickle, sys, csv
+
 from BeautifulSoup import BeautifulSoup, NavigableString, Tag
 from optparse import OptionParser
 
@@ -46,46 +47,56 @@ def PEOPLE_ARTIST_from_musicapopular_cl(input_folder, output_folder):
 
             #ARTIST
             artist = page.find('a', {'id':"up"}).text
+            # print artist, f
 
             #PEOPLE
             people = page.find('span', {'class':"boxficha_integrantes"})
 
+            if not people: continue                        # FOR PAGES WITH NO DATA
+
             if people.findAll(text=True)[0].startswith('G'):   # For extracting groups for individuals
-                artist_type = 'Individual'
+                artist_type = '1'
 
             elif people.findAll(text=True)[0].startswith('I'): # For extracting individuals from Groups
-                artist_type = 'Group'       
+                artist_type = '2'       
 
-            #Extracting the names of all people or bands
-            try:                 
-                people_data = []
-                for br in people.findAll('br')[0:-1]:
-                    data = []
-                    next = br.nextSibling
-                    while not (isinstance(next, Tag) and next.name == 'br'):
-                        if isinstance(next, Tag) and next.name == 'em':
-                            alias = next.find('em').string
-                            print '\t', alias
-                            next.find('em').replaceWith(" ")
-                            data.append(next.name)
-                            # data.append(alias )
-                        else:
-                            data.append(next.string)
-                        next = next.nextSibling
-                    people_data.append(data)
-            except:
-                print 'ERROR IN PAGE {0}'.format(f)
+
+
+        # try:
+            people_data = []
+            for br in people.findAll('br')[0:-1]:
+                data = []
+
+                n = br.nextSibling
+                while n == '\n': n = n.nextSibling
+                while not (isinstance(n, Tag) and n.name == 'br'):  # If it is tag and 'br'
+                    alias = None
+                    if n is None:                           # For handling None
+                        print "ERROR: NONE"
+                        break
+                    if (isinstance(n,Tag)):
+                        if n.find('em'):                        # Alias with <em>
+                            alias = n.find('em').extract().text
+                            data.append(alias)
+                        # print n.text,
+                        data.append(n.text)
+                    elif (isinstance(n,NavigableString)):
+                        # print n
+                        o = re.sub('[\r\n]', '', n)             # Removes '\r' and '\n'
+                        data.append(o)
+                    n = n.nextSibling
+                people_data.append(data)
+
+        # except:
+        #     print 'ERROR IN PAGE {0}'.format(f)
 
             
 
 
 
             print 'http://www.musicapopular.cl/3.0/index2.php?op=Artista&id=&{0}'.format(f)
-            print artist_type, '\t', artist
-            for pd in people_data: print f, artist_type, artist, pd
             people_data = data_cleaner(people_data)
-            # print people_data
-            # for pd in people_data: print f, artist_type, artist, pd
+            for pd in people_data: print f, artist_type, artist, pd
 
             # for p in people:
             #     # print p
