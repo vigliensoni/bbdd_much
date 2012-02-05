@@ -67,25 +67,35 @@ def PEOPLE_ARTIST_from_musicapopular_cl(input_folder, output_folder):
             for br in people.findAll('br')[0:-1]:
                 data = []
 
-                n = br.nextSibling
-                while n == '\n': n = n.nextSibling
-                while not (isinstance(n, Tag) and n.name == 'br'):  # If it is tag and 'br'
+                n = br.next
+                while n == '\n': n = n.next
+                while not (isinstance(n, Tag) and n.name == 'br'):  # While it is not a <br> tag
                     alias = None
                     if n is None:                           # For handling None
                         print "ERROR: NONE"
                         break
                     if (isinstance(n,Tag)):
-                        if n.find('em'):                        # Alias with <em>
-                            alias = n.find('em').extract().text
+                        if n.name == 'em':                      # Alias with <em>
+                            alias = n.text
                             data.append(alias)
+                        pass
+                        # if n.find('em'):                        # Alias with <em>
+                        #     alias = n.find('em').extract().text
+                            # data.append(alias)
+                        # elif n.find('span', {'style':"font-style: italic;"})
+                        #     alias = n.text
+                        #     data.append(alias)
                         # print n.text,
-                        data.append(n.text)
+                        # data.append(n.text)
+                        # if alias: data.append(alias)
                     elif (isinstance(n,NavigableString)):
                         # print n
                         o = re.sub('[\r\n]', '', n)             # Removes '\r' and '\n'
                         data.append(o)
-                    n = n.nextSibling
+                    n = n.next
+
                 people_data.append(data)
+                
 
         # except:
         #     print 'ERROR IN PAGE {0}'.format(f)
@@ -96,7 +106,9 @@ def PEOPLE_ARTIST_from_musicapopular_cl(input_folder, output_folder):
 
             print 'http://www.musicapopular.cl/3.0/index2.php?op=Artista&id=&{0}'.format(f)
             people_data = data_cleaner(people_data)
-            for pd in people_data: print f, artist_type, artist, pd
+            for pd in people_data: 
+                print f, artist_type, artist, pd
+                # print "{0}\t{1}\t{2}\t{3}".format(f, artist_type, artist, pd)
 
             # for p in people:
             #     # print p
