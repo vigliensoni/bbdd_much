@@ -66,48 +66,49 @@ def PEOPLE_ARTIST_from_musicapopular_cl(input_folder, output_folder):
             people_data = []
             for br in people.findAll('br')[0:-1]:
                 data = []
-
+                name = []
+                alias = []
+                instrument = []
                 n = br.next
                 while n == '\n': n = n.next
                 while not (isinstance(n, Tag) and n.name == 'br'):  # While it is not a <br> tag
-                    alias = None
+
                     if n is None:                           # For handling None
                         print "ERROR: NONE"
                         break
                     if (isinstance(n,Tag)):
                         if n.name == 'em':                      # Alias with <em>
-                            alias = n.text
-                            data.append(alias)
-                        pass
-                        # if n.find('em'):                        # Alias with <em>
-                        #     alias = n.find('em').extract().text
+                            alias.append(n.text)
                             # data.append(alias)
-                        # elif n.find('span', {'style':"font-style: italic;"})
-                        #     alias = n.text
-                        #     data.append(alias)
-                        # print n.text,
-                        # data.append(n.text)
-                        # if alias: data.append(alias)
+                        pass
+
                     elif (isinstance(n,NavigableString)):
                         # print n
                         o = re.sub('[\r\n]', '', n)             # Removes '\r' and '\n'
-                        data.append(o)
+                        name.append(o)
                     n = n.next
 
-                people_data.append(data)
-                
+                people_data.append(''.join(name))
 
-        # except:
-        #     print 'ERROR IN PAGE {0}'.format(f)
+
+            # for pd in people_data:
+            #     print re.split('[,;(]', pd)
 
             
 
 
 
             print 'http://www.musicapopular.cl/3.0/index2.php?op=Artista&id=&{0}'.format(f)
-            people_data = data_cleaner(people_data)
+            # people_data = data_cleaner(people_data)
             for pd in people_data: 
-                print f, artist_type, artist, pd
+                data = re.split('[,;]', pd)
+                name = data[0]
+                instruments = re.split('[()]', data[1])[0]
+                years = re.split('[()]', data[1])[1]
+
+
+                print f,'\t',artist_type,'\t', artist,'\t', name, '\t', instruments, '\t', years
+
                 # print "{0}\t{1}\t{2}\t{3}".format(f, artist_type, artist, pd)
 
             # for p in people:
