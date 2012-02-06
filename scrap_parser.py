@@ -20,27 +20,15 @@ class MyWriter:
 
 
 
-def PEOPLE_ARTIST_from_musicapopular_cl(input_folder, output_folder):
+def PEOPLE_ARTIST_from_musicapopular_cl(input_folder, output_file):
     '''Parses f_name, l_name, instruments played, and active years of all people
     for an specific artist in musicapopular_cl
     '''
     # writer = MyWriter(sys.stdout, os.path.join(output_folder, '_log_test.txt'))
     # sys.stdout = writer
 
-    w = open('./listado_musica_popular.csv', 'wt')
+    w = open(output_file, 'wt')
     writer = csv.writer(w)
-
-
-    def data_cleaner(array):
-        '''Cleans '\n' and None in an array'''
-        catenator = []
-        for vector in array:
-            while vector.count('\n') > 0:
-                vector.remove('\n')
-            while vector.count(None) > 0:
-                vector.remove(None)
-            catenator.append(''.join(vector))
-        return catenator
 
     def instrument_parser(instruments):
         """Receives a string and parses it by 'y', and ','"""
@@ -49,7 +37,7 @@ def PEOPLE_ARTIST_from_musicapopular_cl(input_folder, output_folder):
         parsed_instruments = []
         instruments = re.split('[,y]', instruments)
         for i in instruments:
-            instrument = i.strip().capitalize().encode('utf-8')
+            instrument = i.strip().capitalize()
             # print i, instrument
             parsed_instruments.append(instrument)
         return parsed_instruments
@@ -106,25 +94,37 @@ def PEOPLE_ARTIST_from_musicapopular_cl(input_folder, output_folder):
                         print "ERROR: NONE"
                         break
                     if (isinstance(n,Tag)):
-                        if n.name == 'em':                      # Alias with <em>
+                        if n.name == 'em' or n.name == 'it':                      # Alias with <em>
                             alias.append(n.text)
+                            # print alias
                         pass
 
                     elif (isinstance(n,NavigableString)):
                         # print n
                         o = re.sub('[\r\n]', '', n)             # Removes '\r' and '\n'
-                        name.append(o)
+                        name.append(o.strip())
+
                     n = n.next
-                    # print name
-                people_data.append(''.join(name))
+                if alias: 
+                    try: name.remove(alias[0])
+                    except: pass
+                    name.append(alias[0])
+                    print 'ALIAS!', f, alias, name
+
+                people_data.append(' '.join(name))
 
 
-            # people_data = data_cleaner(people_data)
+
             for pd in people_data: 
                 person_row = []
                 data = re.split('[,;] (.*) \(', pd)    # splitting everything ',' or ';' and '('
-                name = data[0]
-                # print name, data
+                name = data[0]                          # 1st part of the string is the actual name
+                name = name.split(' ', 1)
+                # print name
+                try: fname = name[0].rstrip(',').encode('utf-8')
+                except: fname = []
+                try: lname = name[1].rstrip(',').encode('utf-8')
+                except: lname = []
 
                 try:    instruments = data[1]
                 except: instruments = []
@@ -137,13 +137,14 @@ def PEOPLE_ARTIST_from_musicapopular_cl(input_folder, output_folder):
                 person_row.append(f)
                 person_row.append(artist_type)
                 person_row.append(artist.encode('utf-8'))
-                person_row.append(name.encode('utf-8'))
+                person_row.append(fname)
+                person_row.append(lname)
                 person_row.append(instruments)
                 person_row.append(years)
 
                 writer.writerow(person_row)
 
-                print f,'\t',artist_type,'\t', artist,'\t', name, '\t', instruments, '\t', years#, 'http://www.musicapopular.cl/3.0/index2.php?op=Artista&id=&{0}'.format(f)
+                # print f,'\t',artist_type,'\t', artist,'\t', fname, '\t', lname, '\t', instruments, '\t', years#, 'http://www.musicapopular.cl/3.0/index2.php?op=Artista&id=&{0}'.format(f)
 
 
     w.close()
@@ -197,7 +198,7 @@ def ARTIST_from_musicapopular_cl(input_folder, output_folder):
             print '\n'
 
 if __name__ == "__main__":
-    usage = "%prog input_folder output_folder"# site_to_scrap?\n(1) musicapopular.cl\n(2) mus.cl\n(3)portaldisc.cl\n(4)vccl.tv"
+    usage = "%prog input_folder output_file"
     opts = OptionParser(usage = usage)
     options, args = opts.parse_args()
 
