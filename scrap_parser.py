@@ -83,7 +83,7 @@ def PEOPLE_ARTIST_from_musicapopular_cl(input_folder, output_file):
             people_data = []
             for br in people.findAll('br')[0:-1]:
                 data = []
-                name = []
+                person_data = []
                 alias = []
                 instrument = []
                 n = br.next
@@ -95,32 +95,31 @@ def PEOPLE_ARTIST_from_musicapopular_cl(input_folder, output_file):
                         break
                     if (isinstance(n,Tag)):
                         if n.name == 'em' or n.name == 'it':                      # Alias with <em>
-                            alias.append(n.text)
+                            alias = n.text.encode('utf-8')
                             # print alias
                         pass
 
                     elif (isinstance(n,NavigableString)):
                         # print n
                         o = re.sub('[\r\n]', '', n)             # Removes '\r' and '\n'
-                        name.append(o.strip())
+                        person_data.append(o.strip())
 
                     n = n.next
                 if alias: 
-                    try: name.remove(alias[0])
+                    try: person_data.remove(alias)
                     except: pass
-                    name.append(alias[0])
-                    print 'ALIAS!', f, alias, name
+                    # person_data.append(alias[0])
+                    # print 'ALIAS!', f, alias, person_data
 
-                people_data.append(' '.join(name))
+                person_data = ' '.join(person_data)
+                # print person_data
 
 
-
-            for pd in people_data: 
                 person_row = []
-                data = re.split('[,;] (.*) \(', pd)    # splitting everything ',' or ';' and '('
+                data = re.split('[,;] (.*) \(', person_data)    # splitting everything ',' or ';' and '('
                 name = data[0]                          # 1st part of the string is the actual name
                 name = name.split(' ', 1)
-                # print name
+
                 try: fname = name[0].rstrip(',').encode('utf-8')
                 except: fname = []
                 try: lname = name[1].rstrip(',').encode('utf-8')
@@ -139,12 +138,13 @@ def PEOPLE_ARTIST_from_musicapopular_cl(input_folder, output_file):
                 person_row.append(artist.encode('utf-8'))
                 person_row.append(fname)
                 person_row.append(lname)
+                person_row.append(alias)
                 person_row.append(instruments)
                 person_row.append(years)
 
                 writer.writerow(person_row)
 
-                # print f,'\t',artist_type,'\t', artist,'\t', fname, '\t', lname, '\t', instruments, '\t', years#, 'http://www.musicapopular.cl/3.0/index2.php?op=Artista&id=&{0}'.format(f)
+                print f,'\t',artist_type,'\t', artist,'\t', fname, '\t', lname, '\t', alias ,'\t', instruments, '\t', years#, 'http://www.musicapopular.cl/3.0/index2.php?op=Artista&id=&{0}'.format(f)
 
 
     w.close()
