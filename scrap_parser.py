@@ -17,12 +17,18 @@ class MyWriter:
         self.logfile.close() 
 
 
+
+
+
 def PEOPLE_ARTIST_from_musicapopular_cl(input_folder, output_folder):
     '''Parses f_name, l_name, instruments played, and active years of all people
     for an specific artist in musicapopular_cl
     '''
     # writer = MyWriter(sys.stdout, os.path.join(output_folder, '_log_test.txt'))
     # sys.stdout = writer
+
+    w = open('./listado_musica_popular.csv', 'wt')
+    writer = csv.writer(w)
 
 
     def data_cleaner(array):
@@ -36,6 +42,34 @@ def PEOPLE_ARTIST_from_musicapopular_cl(input_folder, output_folder):
             catenator.append(''.join(vector))
         return catenator
 
+    def instrument_parser(instruments):
+        """Receives a string and parses it by 'y', and ','"""
+        if len(instruments) < 1:
+            return
+        parsed_instruments = []
+        instruments = re.split('[,y]', instruments)
+        for i in instruments:
+            instrument = i.strip().capitalize().encode('utf-8')
+            # print i, instrument
+            parsed_instruments.append(instrument)
+        return parsed_instruments
+
+    def years_parser(years):
+        """Receives a string and parses it by 'y', and ','"""
+        year_array = []
+        if len(years) < 1:
+            return
+        eras = years.split(')')[0].split('/')
+        for era in eras:
+            parsed_years = []
+            sp_years = re.split('([0-9]*)', era)
+            for year in sp_years:
+                if year.isdigit():
+                    parsed_years.append(year)
+            year_array.append(parsed_years)
+        
+        return year_array
+
 
     for dirpath, dirnames, filenames in os.walk(input_folder):
         for f in filenames:       
@@ -47,7 +81,6 @@ def PEOPLE_ARTIST_from_musicapopular_cl(input_folder, output_folder):
 
             #ARTIST
             artist = page.find('a', {'id':"up"}).text
-            # print artist, f
 
             #PEOPLE
             people = page.find('span', {'class':"boxficha_integrantes"})
@@ -56,13 +89,9 @@ def PEOPLE_ARTIST_from_musicapopular_cl(input_folder, output_folder):
 
             if people.findAll(text=True)[0].startswith('G'):   # For extracting groups for individuals
                 artist_type = '1'
-
             elif people.findAll(text=True)[0].startswith('I'): # For extracting individuals from Groups
                 artist_type = '2'       
 
-
-
-        # try:
             people_data = []
             for br in people.findAll('br')[0:-1]:
                 data = []
@@ -79,7 +108,6 @@ def PEOPLE_ARTIST_from_musicapopular_cl(input_folder, output_folder):
                     if (isinstance(n,Tag)):
                         if n.name == 'em':                      # Alias with <em>
                             alias.append(n.text)
-                            # data.append(alias)
                         pass
 
                     elif (isinstance(n,NavigableString)):
@@ -87,74 +115,38 @@ def PEOPLE_ARTIST_from_musicapopular_cl(input_folder, output_folder):
                         o = re.sub('[\r\n]', '', n)             # Removes '\r' and '\n'
                         name.append(o)
                     n = n.next
-
+                    # print name
                 people_data.append(''.join(name))
 
 
-            # for pd in people_data:
-            #     print re.split('[,;(]', pd)
-
-            
-
-
-
-            print 'http://www.musicapopular.cl/3.0/index2.php?op=Artista&id=&{0}'.format(f)
             # people_data = data_cleaner(people_data)
             for pd in people_data: 
-                data = re.split('[,;]', pd)
+                person_row = []
+                data = re.split('[,;] (.*) \(', pd)    # splitting everything ',' or ';' and '('
                 name = data[0]
-                instruments = re.split('[()]', data[1])[0]
-                years = re.split('[()]', data[1])[1]
+                # print name, data
+
+                try:    instruments = data[1]
+                except: instruments = []
+                try:    years = data[2]
+                except: years = []
+    
+                instruments = instrument_parser(instruments)
+                years = years_parser(years)
+                
+                person_row.append(f)
+                person_row.append(artist_type)
+                person_row.append(artist.encode('utf-8'))
+                person_row.append(name.encode('utf-8'))
+                person_row.append(instruments)
+                person_row.append(years)
+
+                writer.writerow(person_row)
+
+                print f,'\t',artist_type,'\t', artist,'\t', name, '\t', instruments, '\t', years#, 'http://www.musicapopular.cl/3.0/index2.php?op=Artista&id=&{0}'.format(f)
 
 
-                print f,'\t',artist_type,'\t', artist,'\t', name, '\t', instruments, '\t', years
-
-                # print "{0}\t{1}\t{2}\t{3}".format(f, artist_type, artist, pd)
-
-            # for p in people:
-            #     # print p
-            #     if len(p) is not 0:
-            #         # PERSON
-            #         p = p.strip('Integrantes:')
-            #         p = p.strip('Grupos:')
-            #         name = p.split(',')[0].split()
-            #         f_name = [name[0]]
-            #         l_name = name[1:]
-            #         l_name = [' '.join(l_name)]
-
-            #         # INSTRUMENTS
-            #         instruments = []
-            #         init = p.find(',')
-            #         end = p.find('(')
-            #         instrument_list = p[init + 1:end]
-            #         instrument_list = instrument_list.replace(' y ', ',').split(',')
-            #         for i in instrument_list:
-            #             instruments.append(i.strip().capitalize())
-
-
-            #         # YEARS
-            #         init = [i for i, x in enumerate(p) if x == "("]
-            #         end = [i for i, x in enumerate(p) if x == ")"]
-                    
-            #         try:
-            #             from_year = p[init[-1]]
-            #             to_year = p[end[-1]]
-
-            #             years = p[init[-1]+1:end[-1]]
-            #             years = years.split('-')
-            #             from_year = years[0].split()
-            #             to_year = years[1].split()
-            #         # except:
-            #         #     print 'error in years'
-            #         # try:
-                        
-            #         #     to_year = years[1].split()
-            #         except:
-            #             to_year = from_year
-            #             print 'error in years'
-
-            #         print artist, f_name, l_name, instruments, from_year, to_year
-            
+    w.close()
 
 
 
@@ -162,8 +154,8 @@ def PEOPLE_ARTIST_from_musicapopular_cl(input_folder, output_folder):
             # bio_creator = bio.find(text=re.compile("&mdash;")).split("&mdash;")[-1].lstrip(' ')
             
             # picture_creator = bio.find(text=re.compile("Foto:")).split("Foto:")[-1].lstrip(' ')
-            g.close()
-            print '\n'
+
+            # print '\n'
 
 
             
