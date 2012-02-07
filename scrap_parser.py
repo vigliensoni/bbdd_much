@@ -5,6 +5,8 @@ from optparse import OptionParser
 
 sys.setrecursionlimit(10000)
 
+
+
 class MyWriter: 
     def __init__(self, stdout, filename): 
         self.stdout = stdout 
@@ -18,9 +20,11 @@ class MyWriter:
 
 
 def no_spaces(string):
-        """Strips the silences if not None"""
+        """Strips the spaces if not None"""
+        st = []
         if string:
-            return string.strip()
+            st = string.strip()
+            return st
 def no_emptylines(array):
         """Strips newlines '\n' in arrays"""
         new_array = []
@@ -32,12 +36,15 @@ def no_emptylines(array):
 def recursive_text_scrapper(zone):
     """Recursively scraps a zone in the page"""
     parsed_text = []
+    
     z = zone.next
-
     while not (isinstance(z, Tag) and z.name =='div'):
         if isinstance(z, NavigableString):
             t = re.sub('[\r\n]', '', z)
-            if len(t) > 0: parsed_text.append(t)
+            if len(t) > 0: parsed_text.append(t.encode('utf-8'))
+        # if isinstance(z, Tag):
+        #     if z.name == 'b':
+        #         t = z.next
         z = z.next
     return parsed_text
         
@@ -176,21 +183,15 @@ def PEOPLE_ARTIST_from_musicapopular_cl(input_folder, output_file):
     w.close()
 
 
-
-            # bio = page.find('div', {'id':"colcentral_bio"})
-            # bio_creator = bio.find(text=re.compile("&mdash;")).split("&mdash;")[-1].lstrip(' ')
-            
-            # picture_creator = bio.find(text=re.compile("Foto:")).split("Foto:")[-1].lstrip(' ')
-
-            # print '\n'
-
-
-            
-def ARTIST_from_musicapopular_cl(input_folder, output_file):
+def ARTIST_from_musicapopular_cl(input_folder, output_folder):
     '''Parses artist_name, start_place, and begin_year for an specific artist in musicapopular_cl
     '''    
     # writer = MyWriter(sys.stdout, os.path.join(output_folder, '_log_test.txt'))
     # sys.stdout = writer
+    artist_data = open(os.path.join(output_folder, 'ARTIST_INFO.txt'), 'wb')
+    
+
+
     for dirpath, dirnames, filenames in os.walk(input_folder):
         for f in filenames:
             # print f
@@ -198,17 +199,29 @@ def ARTIST_from_musicapopular_cl(input_folder, output_file):
                 continue
             
 
+
             file_path = os.path.join(dirpath, f)
             g = open(file_path, 'rb')
             page = pickle.load(g)
+            people = page.find('span', {'class':"boxficha_integrantes"})
+            if not people: continue # FOR HANDLING PAGES WITH NO INFO
+
+            if people.findAll(text=True)[0].startswith('G'):   # For extracting groups for individuals
+                artist_type = '1'
+            elif people.findAll(text=True)[0].startswith('I'): # For extracting individuals from Groups
+                artist_type = '2'  
 
 
             colcentral = page.find('div', {'id':"colcentral"})
             genres = []
             website = []
+            place_start = ''
+            date_start = ''
+            place_end = ''
+            date_end = ''
 
             #ARTIST
-            artist = page.find('a', {'id':"up"}).text
+            artist = page.find('a', {'id':"up"}).text.encode('utf-8')
             
             p_tag = colcentral.findAll('p')
             # print f, artist, len(p_tag)
@@ -222,36 +235,33 @@ def ARTIST_from_musicapopular_cl(input_folder, output_file):
                     data = re.split(':', p.next)
                 # except: pass
 
-                    if data[0] == "Formaci&oacute;n":
-                        try: place_start = re.split(',', data[1], 1)[0]
-                        except: place_start = None
-                        try: date_start = re.split(',', data[1], 1)[1]
-                        except: date_start = None
-                    elif data[0] == "Fechas":
-                        try: place_start = re.split(',', data[1], 1)[0]
-                        except: place_start = None
-                        try: date_start = re.split(',', data[1], 1)[1]
-                        except: date_start = None
+
+
+                    if data[0] == "Formaci&oacute;n":       # FOR BANDS
+                        try: place_start = re.split(',', data[1], 1)[0].encode('utf-8')
+                        except: place_start = ''
+                        try: date_start = re.split(',', data[1], 1)[1].encode('utf-8')
+                        except: date_start = ''
+                    elif data[0] == "Fechas":               # FOR SOLOISTS
+                        try: place_start = re.split(',', data[1], 1)[0].encode('utf-8')
+                        except: place_start = ''
+                        try: date_start = re.split(',', data[1], 1)[1].encode('utf-8')
+                        except: date_start = ''
                     elif data[0] == "Disoluci&oacute;n":
-                        try: place_end = re.split(',', data[1], 1)[0]
-                        except: place_end = None
-                        try: date_end = re.split(',', data[1], 1)[1]
-                        except: date_end = None
+                        try: place_end = re.split(',', data[1], 1)[0].encode('utf-8')
+                        except: place_end = ''
+                        try: date_end = re.split(',', data[1], 1)[1].encode('utf-8')
+                        except: date_end = ''
                     elif data[0] == "G&eacute;nero":
-                    # try:
                         genre_links = p.findAll('a')
                         for g in genre_links:
-                            genres.append(g.next)
-                    # except:
-                    #     pass
-                        # print genres
-                    # else:
-                    #     pass
+                            genres.append(g.next.encode('utf-8'))
                     elif data[0] == "Sitio":
-
                         websites = p.findAll('a')
                         for w in websites:
                             website.append(w.next)
+                        # if len(website) == 0: 
+                        #     print 'XXX'
 
             website = no_emptylines(website)
             place_start = no_spaces(place_start)
@@ -259,13 +269,25 @@ def ARTIST_from_musicapopular_cl(input_folder, output_file):
             place_end = no_spaces(place_end)
             date_end = no_spaces(date_end)
 
-            print f, '\t', artist, '\t',place_start, '\t',date_start, '\t', place_end, '\t',date_end, '\t', genres, '\t', website
+            print f, '\t', artist, '\t',place_start, '\t', date_start, '\t', place_end, '\t', date_end, '\t', genres, '\t', website
 
             # BIOGRAPHY
             bio = page.find('div', {'id':"colcentral_bio"})
             biography = recursive_text_scrapper(bio)
-            print biography
 
+
+            # BIOGRAPHY WRITER
+            artist_biography = open(os.path.join(output_folder, f)+'.txt', 'wt')
+            # writer = csv.writer(artist_biography) 
+            for b in biography:
+                artist_biography.write(b)
+                artist_biography.write('\n')
+            artist_biography.close()
+            # print artist_data
+            # artist_data.write(f)
+            text_line = "{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}\t{7}\t{8}\n".format(f, artist, artist_type, place_start, date_start, place_end, date_end, genres, website)
+            artist_data.write(text_line)
+    artist_data.close()
 
 if __name__ == "__main__":
     usage = "%prog input_folder output_file"
