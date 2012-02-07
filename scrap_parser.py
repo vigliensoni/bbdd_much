@@ -29,6 +29,21 @@ def no_emptylines(array):
                 new_array.append(a)
         return new_array
 
+def recursive_text_scrapper(zone):
+    """Recursively scraps a zone in the page"""
+    parsed_text = []
+    z = zone.next
+
+    while not (isinstance(z, Tag) and z.name =='div'):
+        if isinstance(z, NavigableString):
+            t = re.sub('[\r\n]', '', z)
+            if len(t) > 0: parsed_text.append(t)
+        z = z.next
+    return parsed_text
+        
+        
+  
+
 def PEOPLE_ARTIST_from_musicapopular_cl(input_folder, output_file):
     '''Parses f_name, l_name, instruments played, and active years of all people
     for an specific artist in musicapopular_cl
@@ -246,25 +261,11 @@ def ARTIST_from_musicapopular_cl(input_folder, output_file):
 
             print f, '\t', artist, '\t',place_start, '\t',date_start, '\t', place_end, '\t',date_end, '\t', genres, '\t', website
 
-            # ficha = page.find('div', {'class':"boxficha"})
-            # ficha_data = ficha.find('p')
-            # begin_year = ficha_data.text.strip('Formaci&oacuten;:').split(',')[1].rstrip('.').strip()
-            # end_year = ficha_data.text.strip('Disoluci&oacute;n:')
-            # start_place = ficha_data.text.split(':')[1].split(',')[0].strip()
+            # BIOGRAPHY
+            bio = page.find('div', {'id':"colcentral_bio"})
+            biography = recursive_text_scrapper(bio)
+            print biography
 
-            # #SITIO
-
-
-            # #GENRE
-            # genre = []
-            # genres = ficha.findAll('p')[3].findChildren()
-            # for g in genres:
-            #     genre.append(g.text)
-
-            # print artist, genre, start_place, begin_year
-            
-            
-            # print '\n'
 
 if __name__ == "__main__":
     usage = "%prog input_folder output_file"
