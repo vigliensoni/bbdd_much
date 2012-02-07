@@ -21,7 +21,13 @@ def no_spaces(string):
         """Strips the silences if not None"""
         if string:
             return string.strip()
-
+def no_emptylines(array):
+        """Strips newlines '\n' in arrays"""
+        new_array = []
+        for a in array:
+            if a != '\n':
+                new_array.append(a)
+        return new_array
 
 def PEOPLE_ARTIST_from_musicapopular_cl(input_folder, output_file):
     '''Parses f_name, l_name, instruments played, and active years of all people
@@ -184,6 +190,7 @@ def ARTIST_from_musicapopular_cl(input_folder, output_file):
 
             colcentral = page.find('div', {'id':"colcentral"})
             genres = []
+            website = []
 
             #ARTIST
             artist = page.find('a', {'id':"up"}).text
@@ -216,23 +223,28 @@ def ARTIST_from_musicapopular_cl(input_folder, output_file):
                         try: date_end = re.split(',', data[1], 1)[1]
                         except: date_end = None
                     elif data[0] == "G&eacute;nero":
-                       
-                        try:
-                            genre_links = p.findAll('a')
-                            for g in genre_links:
-                                genres.append(g.next)
-                        except:
-                            pass
+                    # try:
+                        genre_links = p.findAll('a')
+                        for g in genre_links:
+                            genres.append(g.next)
+                    # except:
+                    #     pass
                         # print genres
-                    else:
-                        pass
-                               
+                    # else:
+                    #     pass
+                    elif data[0] == "Sitio":
+
+                        websites = p.findAll('a')
+                        for w in websites:
+                            website.append(w.next)
+
+            website = no_emptylines(website)
             place_start = no_spaces(place_start)
             date_start = no_spaces(date_start)
             place_end = no_spaces(place_end)
             date_end = no_spaces(date_end)
 
-            print f, '\t', artist, '\t',place_start, '\t',date_start, '\t', place_end, '\t',date_end, '\t', genres
+            print f, '\t', artist, '\t',place_start, '\t',date_start, '\t', place_end, '\t',date_end, '\t', genres, '\t', website
 
             # ficha = page.find('div', {'class':"boxficha"})
             # ficha_data = ficha.find('p')
