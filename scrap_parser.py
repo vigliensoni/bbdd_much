@@ -183,43 +183,56 @@ def ARTIST_from_musicapopular_cl(input_folder, output_file):
 
 
             colcentral = page.find('div', {'id':"colcentral"})
-
+            genres = []
 
             #ARTIST
             artist = page.find('a', {'id':"up"}).text
-
-            p = colcentral.findAll('p')
+            
+            p_tag = colcentral.findAll('p')
+            # print f, artist, len(p_tag)
             #FORMACION
-            
-            data = re.split(':', p[0].next)
-            place = None
-            date = None
+            for p in p_tag[0:]:
+                # print i, p 
+                # place = None
+                # date = None
+                
+                if isinstance((p.next), NavigableString):
+                    data = re.split(':', p.next)
+                # except: pass
 
-            if data[0] == "Formaci&oacute;n":
-                try: place_start = re.split(',', data[1], 1)[0]
-                except: place_start = None
-                try: date_start = re.split(',', data[1], 1)[1]
-                except: date_start = None
-            elif data[0] == "Fechas":
-                try: place_start = re.split(',', data[1], 1)[0]
-                except: place_start = None
-                try: date_start = re.split(',', data[1], 1)[1]
-                except: date_start = None
-            
-            #DISOLUCION
-            data = re.split(':', p[1].next)
-            if data[0] == "Disoluci&oacute;n":
-                try: place_end = re.split(',', data[1], 1)[0]
-                except: place_end = None
-                try: date_end = re.split(',', data[1], 1)[1]
-                except: date_end = None
-            
+                    if data[0] == "Formaci&oacute;n":
+                        try: place_start = re.split(',', data[1], 1)[0]
+                        except: place_start = None
+                        try: date_start = re.split(',', data[1], 1)[1]
+                        except: date_start = None
+                    elif data[0] == "Fechas":
+                        try: place_start = re.split(',', data[1], 1)[0]
+                        except: place_start = None
+                        try: date_start = re.split(',', data[1], 1)[1]
+                        except: date_start = None
+                    elif data[0] == "Disoluci&oacute;n":
+                        try: place_end = re.split(',', data[1], 1)[0]
+                        except: place_end = None
+                        try: date_end = re.split(',', data[1], 1)[1]
+                        except: date_end = None
+                    elif data[0] == "G&eacute;nero":
+                       
+                        try:
+                            genre_links = p.findAll('a')
+                            for g in genre_links:
+                                genres.append(g.next)
+                        except:
+                            pass
+                        # print genres
+                    else:
+                        pass
+                               
             place_start = no_spaces(place_start)
             date_start = no_spaces(date_start)
             place_end = no_spaces(place_end)
             date_end = no_spaces(date_end)
 
-            print f, '\t', artist, '\t',place_start, '\t',date_start, '\t', place_end, '\t',date_end
+            print f, '\t', artist, '\t',place_start, '\t',date_start, '\t', place_end, '\t',date_end, '\t', genres
 
             # ficha = page.find('div', {'class':"boxficha"})
             # ficha_data = ficha.find('p')
