@@ -17,7 +17,10 @@ class MyWriter:
         self.logfile.close() 
 
 
-
+def no_spaces(string):
+        """Strips the silences if not None"""
+        if string:
+            return string.strip()
 
 
 def PEOPLE_ARTIST_from_musicapopular_cl(input_folder, output_file):
@@ -29,6 +32,8 @@ def PEOPLE_ARTIST_from_musicapopular_cl(input_folder, output_file):
 
     w = open(output_file, 'wt')
     writer = csv.writer(w)
+
+
 
     def instrument_parser(instruments):
         """Receives a string and parses it by 'y', and ','"""
@@ -160,7 +165,7 @@ def PEOPLE_ARTIST_from_musicapopular_cl(input_folder, output_file):
 
 
             
-def ARTIST_from_musicapopular_cl(input_folder, output_folder):
+def ARTIST_from_musicapopular_cl(input_folder, output_file):
     '''Parses artist_name, start_place, and begin_year for an specific artist in musicapopular_cl
     '''    
     # writer = MyWriter(sys.stdout, os.path.join(output_folder, '_log_test.txt'))
@@ -177,25 +182,64 @@ def ARTIST_from_musicapopular_cl(input_folder, output_folder):
             page = pickle.load(g)
 
 
+            colcentral = page.find('div', {'id':"colcentral"})
+
+
             #ARTIST
             artist = page.find('a', {'id':"up"}).text
 
+            p = colcentral.findAll('p')
             #FORMACION
-            ficha = page.find('div', {'class':"boxficha"})
-            ficha_data = ficha.find('p')
-            begin_year = ficha_data.text.strip('Formaci&oacuten;:').split(',')[1].rstrip('.').strip()
-            start_place = ficha_data.text.split(':')[1].split(',')[0].strip()
+            
+            data = re.split(':', p[0].next)
+            place = None
+            date = None
 
-            #GENRE
-            genre = []
-            genres = ficha.findAll('p')[3].findChildren()
-            for g in genres:
-                genre.append(g.text)
+            if data[0] == "Formaci&oacute;n":
+                try: place_start = re.split(',', data[1], 1)[0]
+                except: place_start = None
+                try: date_start = re.split(',', data[1], 1)[1]
+                except: date_start = None
+            elif data[0] == "Fechas":
+                try: place_start = re.split(',', data[1], 1)[0]
+                except: place_start = None
+                try: date_start = re.split(',', data[1], 1)[1]
+                except: date_start = None
+            
+            #DISOLUCION
+            data = re.split(':', p[1].next)
+            if data[0] == "Disoluci&oacute;n":
+                try: place_end = re.split(',', data[1], 1)[0]
+                except: place_end = None
+                try: date_end = re.split(',', data[1], 1)[1]
+                except: date_end = None
+            
+            place_start = no_spaces(place_start)
+            date_start = no_spaces(date_start)
+            place_end = no_spaces(place_end)
+            date_end = no_spaces(date_end)
 
-            print artist, genre, start_place, begin_year
+            print f, '\t', artist, '\t',place_start, '\t',date_start, '\t', place_end, '\t',date_end
+
+            # ficha = page.find('div', {'class':"boxficha"})
+            # ficha_data = ficha.find('p')
+            # begin_year = ficha_data.text.strip('Formaci&oacuten;:').split(',')[1].rstrip('.').strip()
+            # end_year = ficha_data.text.strip('Disoluci&oacute;n:')
+            # start_place = ficha_data.text.split(':')[1].split(',')[0].strip()
+
+            # #SITIO
+
+
+            # #GENRE
+            # genre = []
+            # genres = ficha.findAll('p')[3].findChildren()
+            # for g in genres:
+            #     genre.append(g.text)
+
+            # print artist, genre, start_place, begin_year
             
             
-            print '\n'
+            # print '\n'
 
 if __name__ == "__main__":
     usage = "%prog input_folder output_file"
@@ -205,8 +249,8 @@ if __name__ == "__main__":
     if not args:
         opts.error("You must supply arguments to this script.")  
 
-    PEOPLE_ARTIST_from_musicapopular_cl(args[0], args[1])
-    # ARTIST_from_musicapopular_cl(args[0], args[1])
+    # PEOPLE_ARTIST_from_musicapopular_cl(args[0], args[1])
+    ARTIST_from_musicapopular_cl(args[0], args[1])
     
 
 
