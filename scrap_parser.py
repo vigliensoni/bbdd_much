@@ -51,16 +51,16 @@ def recursive_text_scrapper(zone):
         
   
 
-def PEOPLE_ARTIST_from_musicapopular_cl(input_folder, output_file):
+def PEOPLE_ARTIST_from_musicapopular_cl(input_folder, output_folder):
     '''Parses f_name, l_name, instruments played, and active years of all people
     for an specific artist in musicapopular_cl
     '''
     # writer = MyWriter(sys.stdout, os.path.join(output_folder, '_log_test.txt'))
     # sys.stdout = writer
 
-    w = open(output_file, 'wt')
-    writer = csv.writer(w)
-
+    # w = open(output_file, 'wt')
+    # writer = csv.writer(w)
+    people_artist = open(os.path.join(output_folder, 'PEOPLE_ARTIST.txt'), 'wb')
 
 
     def instrument_parser(instruments):
@@ -166,21 +166,22 @@ def PEOPLE_ARTIST_from_musicapopular_cl(input_folder, output_file):
                 instruments = instrument_parser(instruments)
                 years = years_parser(years)
                 
-                person_row.append(f)
-                person_row.append(artist_type)
-                person_row.append(artist.encode('utf-8'))
-                person_row.append(fname)
-                person_row.append(lname)
-                person_row.append(alias)
-                person_row.append(instruments)
-                person_row.append(years)
+                # person_row.append(f)
+                # person_row.append(artist_type)
+                # person_row.append(artist.encode('utf-8'))
+                # person_row.append(fname)
+                # person_row.append(lname)
+                # person_row.append(alias)
+                # person_row.append(instruments)
+                # person_row.append(years)
 
-                writer.writerow(person_row)
+                # writer.writerow(person_row)
 
                 print f,'\t',artist_type,'\t', artist,'\t', fname, '\t', lname, '\t', alias ,'\t', instruments, '\t', years#, 'http://www.musicapopular.cl/3.0/index2.php?op=Artista&id=&{0}'.format(f)
 
-
-    w.close()
+                text_line = "{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}\t{7}\n".format(f, artist_type, artist.encode('utf-8'), fname, lname, alias, instruments, years)
+                people_artist.write(text_line)
+    # w.close()
 
 
 def ARTIST_from_musicapopular_cl(input_folder, output_folder):
@@ -290,15 +291,15 @@ def ARTIST_from_musicapopular_cl(input_folder, output_folder):
     artist_data.close()
 
 if __name__ == "__main__":
-    usage = "%prog input_folder output_file"
+    usage = "%prog input_folder output_folder"
     opts = OptionParser(usage = usage)
     options, args = opts.parse_args()
 
     if not args:
         opts.error("You must supply arguments to this script.")  
 
-    # PEOPLE_ARTIST_from_musicapopular_cl(args[0], args[1])
-    ARTIST_from_musicapopular_cl(args[0], args[1])
+    PEOPLE_ARTIST_from_musicapopular_cl(args[0], args[1])
+    # ARTIST_from_musicapopular_cl(args[0], args[1])
     
 
 
