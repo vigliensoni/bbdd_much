@@ -26,18 +26,22 @@ def musicapopular(output_folder): #, item_to_scrap):
         page = urllib2.urlopen("http://www.musicapopular.cl/3.0/index2.php?op=Artista&id={0}".format(idx))
         soup = BeautifulSoup(page)
 
-        artist = soup.find('a', {'id':"up"})
+        artist = soup.find('a', {'id':"up"}).text.encode('utf-8')
         bio = soup.find('div', {'id':"colcentral_bio"})
-        print ("{0}, {1}".format(i, artist.text.encode("utf-8")))
-        return soup
+        # print ("{0}, {1}".format(i, artist.text.encode("utf-8")))
+        return soup, artist
 
-
+    # for i in xrange(503, 504):
     for i in xrange(30000):
         i += 1
         filename = os.path.join(output_folder, str(i))
-        f = open(filename, 'w')
-        soup = artist_review(i)
-        pickle.dump(soup, f)     # TO DUMP IT AS PICKLE
+        
+        soup, artist = artist_review(i)
+        if artist:
+            f = open(filename, 'w')
+            print "{0}\t{1}".format(i, artist)
+            pickle.dump(soup, f)     # TO DUMP IT AS PICKLE
+            f.close()
 
     print 'END' 
 

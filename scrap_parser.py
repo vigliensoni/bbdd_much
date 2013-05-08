@@ -1,11 +1,40 @@
+# -*- coding: UTF-8 -*-
 import urllib2, re, os, pickle, sys, csv
-
-from BeautifulSoup import BeautifulSoup, NavigableString, Tag
+import codecs
+from BeautifulSoup import BeautifulSoup, NavigableString, Tag, SoupStrainer
 from optparse import OptionParser
 
 sys.setrecursionlimit(10000)
 
 
+print '1'
+
+
+map = {
+u"¡": u"!", u"¢": u"c", u"£": u"L", u"¤": u"o", u"¥": u"Y",
+u"¦": u"|", u"§": u"S", u"¨": u"`", u"©": u"c", u"ª": u"a",
+u"«": u"<<", u"¬": u"-", u"­": u"-", u"®": u"R", u"¯": u"-",
+u"°": u"o", u"±": u"+-", u"²": u"2", u"³": u"3", u"´": u"'",
+u"µ": u"u", u"¶": u"P", u"·": u".", u"¸": u",", u"¹": u"1",
+u"º": u"o", u"»": u">>", u"¼": u"1/4", u"½": u"1/2", u"¾": u"3/4",
+u"¿": u"?", u"À": u"A", u"Á": u"A", u"Â": u"A", u"Ã": u"A",
+u"Ä": u"A", u"Å": u"A", u"Æ": u"Ae", u"Ç": u"C", u"È": u"E",
+u"É": u"E", u"Ê": u"E", u"Ë": u"E", u"Ì": u"I", u"Í": u"I",
+u"Î": u"I", u"Ï": u"I", u"Ð": u"D", u"Ñ": u"N", u"Ò": u"O",
+u"Ó": u"O", u"Ô": u"O", u"Õ": u"O", u"Ö": u"O", u"×": u"*",
+u"Ø": u"O", u"Ù": u"U", u"Ú": u"U", u"Û": u"U", u"Ü": u"U",
+u"Ý": u"Y", u"Þ": u"p", u"ß": u"b", u"à": u"a", u"á": u"a",
+u"â": u"a", u"ã": u"a", u"ä": u"a", u"å": u"a", u"æ": u"ae",
+u"ç": u"c", u"è": u"e", u"é": u"e", u"ê": u"e", u"ë": u"e",
+u"ì": u"i", u"í": u"i", u"î": u"i", u"ï": u"i", u"ð": u"d",
+u"ñ": u"n", u"ò": u"o", u"ó": u"o", u"ô": u"o", u"õ": u"o",
+u"ö": u"o", u"÷": u"/", u"ø": u"o", u"ù": u"u", u"ú": u"u",
+u"û": u"u", u"ü": u"u", u"ý": u"y", u"þ": u"p", u"ÿ": u"y", 
+u"’": u"'", u"“": u"'", u"”": u"'", u'"': u"'", u"\x93": u"'", u"\x94": u"'"}
+
+def asciify(error):
+    return map[error.object[error.start]], error.end
+codecs.register_error('asciify', asciify)
 
 class MyWriter: 
     def __init__(self, stdout, filename): 
@@ -40,20 +69,35 @@ def recursive_text_scrapper(zone):
     z = zone.next
     while not (isinstance(z, Tag) and z.name =='div'):
         if isinstance(z, NavigableString):
-            t = re.sub('[\r\n]', '', z)
-            if len(t) > 0: parsed_text.append(t.encode('utf-8'))
+            t = re.sub('[\r]', '', z)                           # eliminates carriage return
+            t = re.sub('(\n\n)', '\n', t)                       # replaces two consecutives newlines for one
+            if len(t) > 0: parsed_text.append(t.strip().encode('utf-8'))
+        elif (isinstance(z, Tag) and z.name == 'br'):
+            parsed_text.append('\n') 
+        elif (isinstance(z, Tag) and z.name == 'strong'):
+            parsed_text.append('\n') 
+        elif (isinstance(z, Tag) and z.name == 'a'):
+            parsed_text.append(' ') 
+        
         # if isinstance(z, Tag):
         #     if z.name == 'b':
         #         t = z.next
         z = z.next
-    return parsed_text
+    joined_text = ''.join(parsed_text)
+    
+    # parsed = re.sub('(\n\n)', '\n', joined_text)
+    # print joined_text
+    return joined_text
         
         
   
 
 def PEOPLE_ARTIST_from_musicapopular_cl(input_folder, output_folder):
     '''Parses f_name, l_name, instruments played, and active years of all people
-    for an specific artist in musicapopular_cl
+    for an specific artist in musicapopular_cl. It works only for artist with more than 
+    one person.
+    This method outputs a single .txt file with:
+    [id, artist_type, artist_name, fname, lname, alias, instruments, years]
     '''
     # writer = MyWriter(sys.stdout, os.path.join(output_folder, '_log_test.txt'))
     # sys.stdout = writer
@@ -61,6 +105,7 @@ def PEOPLE_ARTIST_from_musicapopular_cl(input_folder, output_folder):
     # w = open(output_file, 'wt')
     # writer = csv.writer(w)
     people_artist = open(os.path.join(output_folder, 'PEOPLE_ARTIST.txt'), 'wb')
+    people_artist.write('no, artist_type, artist, fname, lname, alias, instruments, years\n')
 
 
     def instrument_parser(instruments):
@@ -73,6 +118,8 @@ def PEOPLE_ARTIST_from_musicapopular_cl(input_folder, output_folder):
             instrument = i.strip().capitalize()
             # print i, instrument
             parsed_instruments.append(instrument)
+        if not parsed_instruments:
+            parsed_instruments = ''
         return parsed_instruments
 
     def years_parser(years):
@@ -88,7 +135,8 @@ def PEOPLE_ARTIST_from_musicapopular_cl(input_folder, output_folder):
                 if year.isdigit():
                     parsed_years.append(year)
             year_array.append(parsed_years)
-        
+        if not year_array:
+            year_array = ''
         return year_array
 
 
@@ -109,31 +157,30 @@ def PEOPLE_ARTIST_from_musicapopular_cl(input_folder, output_folder):
             if not people: continue                        # FOR PAGES WITH NO DATA
 
             if people.findAll(text=True)[0].startswith('G'):   # For extracting groups for individuals
-                artist_type = '1'
+                artist_type = 1
             elif people.findAll(text=True)[0].startswith('I'): # For extracting individuals from Groups
-                artist_type = '2'       
+                artist_type = 2       
 
             people_data = []
-            for br in people.findAll('br')[0:-1]:
+            for br in people.findAll('br')[0:-3+artist_type]:    # Hacky way of doing -2 for people and -1 for bands
                 data = []
                 person_data = []
-                alias = []
+                alias = ''
                 instrument = []
                 n = br.next
                 while n == '\n': n = n.next
                 while not (isinstance(n, Tag) and n.name == 'br'):  # While it is not a <br> tag
 
-                    if n is None:                           # For handling None
-                        print "ERROR: NONE"
-                        break
-                    if (isinstance(n,Tag)):
+                    # if n is None:                           # For handling None
+                    #     print "ERROR: NONE"
+                    #     break
+                    if (isinstance(n, Tag)):
                         if n.name == 'em' or n.name == 'it':                      # Alias with <em>
                             alias = n.text.encode('utf-8')
                             # print alias
                         pass
 
-                    elif (isinstance(n,NavigableString)):
-                        # print n
+                    elif (isinstance(n, NavigableString)):
                         o = re.sub('[\r\n]', '', n)             # Removes '\r' and '\n'
                         person_data.append(o.strip())
 
@@ -149,49 +196,50 @@ def PEOPLE_ARTIST_from_musicapopular_cl(input_folder, output_folder):
 
 
                 person_row = []
-                data = re.split('[,;] (.*) \(', person_data)    # splitting everything ',' or ';' and '('
-                name = data[0]                          # 1st part of the string is the actual name
-                name = name.split(' ', 1)
+                data = re.split('[,;:] (.*) \(', person_data)    # splitting everything ',' or ';' and '('
+                name = data[0]                                  # 1st part of the string is the actual name
 
-                try: fname = name[0].rstrip(',').encode('utf-8')
-                except: fname = []
-                try: lname = name[1].rstrip(',').encode('utf-8')
-                except: lname = []
+                if artist_type == 2:                            # If it is a band, split names in fname and lname
+                    name = name.split(' ', 1)
+                    try: fname = name[0].rstrip(',').encode('utf-8')
+                    except: fname = ''
+                    try: lname = name[1].rstrip(',').encode('utf-8')
+                    except: lname = ''
+                    try:    instruments = data[1]
+                    except: instruments = ''
+                    try:    years = data[2]
+                    except: years = ''
+                elif artist_type == 1:                          # If it is a person, put the name of the band in one field
+                    fname = name.encode('utf-8')
+                    lname = ''
+                    alias = []
+                    years = ''
+                    instruments = ''
 
-                try:    instruments = data[1]
-                except: instruments = []
-                try:    years = data[2]
-                except: years = []
+
+
     
                 instruments = instrument_parser(instruments)
                 years = years_parser(years)
-                
-                # person_row.append(f)
-                # person_row.append(artist_type)
-                # person_row.append(artist.encode('utf-8'))
-                # person_row.append(fname)
-                # person_row.append(lname)
-                # person_row.append(alias)
-                # person_row.append(instruments)
-                # person_row.append(years)
-
-                # writer.writerow(person_row)
 
                 print f,'\t',artist_type,'\t', artist,'\t', fname, '\t', lname, '\t', alias ,'\t', instruments, '\t', years#, 'http://www.musicapopular.cl/3.0/index2.php?op=Artista&id=&{0}'.format(f)
 
                 text_line = "{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}\t{7}\n".format(f, artist_type, artist.encode('utf-8'), fname, lname, alias, instruments, years)
                 people_artist.write(text_line)
     # w.close()
+    people_artist.close()
 
 
-def ARTIST_from_musicapopular_cl(input_folder, output_folder):
-    '''Parses artist_name, start_place, and begin_year for an specific artist in musicapopular_cl
+def ARTIST_INFO_from_musicapopular_cl(input_folder, output_folder):
+    '''Parses artist_name, start_place, and begin_year for an specific artist in musicapopular_cl.
+    Outputs an ARTIST_INFO file with all that data, but also outputs the BIOGRAPHIES for all 
+    artists in a .txt file for each of them
     '''    
     # writer = MyWriter(sys.stdout, os.path.join(output_folder, '_log_test.txt'))
     # sys.stdout = writer
     artist_data = open(os.path.join(output_folder, 'ARTIST_INFO.txt'), 'wb')
     
-
+    artist_data.write('no, artist, artist_type, place_start, date_start, place_end, date_end, genres, website\n')
 
     for dirpath, dirnames, filenames in os.walk(input_folder):
         for f in filenames:
@@ -256,7 +304,7 @@ def ARTIST_from_musicapopular_cl(input_folder, output_folder):
                     elif data[0] == "G&eacute;nero":
                         genre_links = p.findAll('a')
                         for g in genre_links:
-                            genres.append(g.next.encode('utf-8'))
+                            genres.append(g.next.encode('latin-1'))
                     elif data[0] == "Sitio":
                         websites = p.findAll('a')
                         for w in websites:
@@ -270,7 +318,7 @@ def ARTIST_from_musicapopular_cl(input_folder, output_folder):
             place_end = no_spaces(place_end)
             date_end = no_spaces(date_end)
 
-            print f, '\t', artist, '\t',place_start, '\t', date_start, '\t', place_end, '\t', date_end, '\t', genres, '\t', website
+            # print f, '\t', artist, '\t',place_start, '\t', date_start, '\t', place_end, '\t', date_end, '\t', genres, '\t', website
 
             # BIOGRAPHY
             bio = page.find('div', {'id':"colcentral_bio"})
@@ -279,10 +327,11 @@ def ARTIST_from_musicapopular_cl(input_folder, output_folder):
 
             # BIOGRAPHY WRITER
             artist_biography = open(os.path.join(output_folder, f)+'.txt', 'wt')
+
             # writer = csv.writer(artist_biography) 
-            for b in biography:
-                artist_biography.write(b)
-                artist_biography.write('\n')
+            # for b in biography:
+            artist_biography.write(biography)
+                # artist_biography.write('')
             artist_biography.close()
             # print artist_data
             # artist_data.write(f)
@@ -290,16 +339,29 @@ def ARTIST_from_musicapopular_cl(input_folder, output_folder):
             artist_data.write(text_line)
     artist_data.close()
 
+# #1st approach
+# colcentral = page.find('div', {'id':"colcentral"})
+# discs = colcentral.findAll('ul')
+# #2nd approach, it reaches very fast the links but there is no access to the title sections
+# links = SoupStrainer('a', href=re.compile('RGlzY28'))
+# o = [tag for tag in BeautifulSoup(colcentral.prettify(), parseOnlyThese=links)]
+# link = o[0]['href']
+
 if __name__ == "__main__":
-    usage = "%prog input_folder output_folder"
+    usage = "%prog [ARTIST_INFO(1) or PEOPLE_ARTIST(2)] input_folder output_folder"
     opts = OptionParser(usage = usage)
     options, args = opts.parse_args()
 
     if not args:
         opts.error("You must supply arguments to this script.")  
 
-    PEOPLE_ARTIST_from_musicapopular_cl(args[0], args[1])
-    # ARTIST_from_musicapopular_cl(args[0], args[1])
+    if args[0] == '1':
+        ARTIST_INFO_from_musicapopular_cl(args[1], args[2])
+    elif args[0] == '2':
+        PEOPLE_ARTIST_from_musicapopular_cl(args[1], args[2])
+    else:
+        print 'Choose (1) for ARTIST_INFO or (2) for PEOPLE_ARTIST'
+    
     
 
 

@@ -1,6 +1,7 @@
 import urllib2, re, os, pickle, sys, csv
 from BeautifulSoup import BeautifulSoup
 from optparse import OptionParser
+import gvm_tools
 
 sys.setrecursionlimit(10000)
 
@@ -79,6 +80,41 @@ def main(output_folder): #, item_to_scrap):
         # data1 = pickle.load(pkl_file)
 
     print 'END' 
+
+
+def date_formatter(i_file, o_file):
+    """
+    """
+    i_file = open(i_file, 'rb')
+    o_file = open(o_file, 'wb')
+    PoG = {'1':'Person', '2':'Group'}
+    reader = i_file.readlines()
+
+
+    for j, line in enumerate(reader[1:]):
+        line_joined = []
+        line_split = line.decode('latin-1').split('\t')
+        line_split = [ls.strip('\r\n') for ls in line_split]
+
+        
+
+        date_init = line_split[4]
+        d_i, m_i, y_i = gvm_tools.date_parser(date_init)
+        date_end = line_split[6]
+        d_e, m_e, y_e = gvm_tools.date_parser(date_end)
+        
+        name = line_split[1]
+        type_pog = PoG[line_split[2]]
+        country = 'Chile'
+        disambiguation = 'Chile'
+        note = 'http://www.musicapopular.cl/3.0/index2.php?op=Artista&id={0}'.format(line_split[0])
+        line_joined = '\t'.join([name, disambiguation, type_pog, country, d_i, m_i, y_i, d_e, m_e, y_e, note, '\n']).encode('latin-1')
+
+        o_file.write(line_joined)
+    o_file.close()
+
+
+
 
 
 
